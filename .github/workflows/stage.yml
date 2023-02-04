@@ -1,0 +1,50 @@
+name: "Terraform CI/CD STAGE"
+
+on:
+  pull_request_target:
+    branches:
+      - stage
+      
+  push:
+    branches:
+      - stage
+
+permissions:
+      id-token: write
+      contents: read
+
+env:
+  AWS_REGION: eu-central-1
+
+jobs:
+  terraform:
+    name: "Terraform"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.8
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_STAGE }}
+
+      - name: Terraform Init
+        id: init
+        run: terraform init -backend-config="bucket=stepan-stage-tfstate" -backend-config="key=stage.state" -reconfigure
+
+      - name: Terraform Plan
+        id: plan
+        if: github.event_name == 'pull_request_target' || github.event_name == 'push'
+        run: terraform plan -var env="stage" -lock-timeout=600s
+
+      - name: Terraform Apply
+        id: apply
+        if: github.event_name == 'push'
+        run: terraform apply -var env="stage" -auto-approve -lock-timeout=600s
