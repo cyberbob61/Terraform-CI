@@ -16,7 +16,7 @@ permissions:
 env:
   AWS_REGION: eu-central-1
   ENVIRONMENT: dev
-  BUCKET_STATE: lapaya-stepan-dev-tfstate
+  BUCKET_STATE: stepan-dev-tfstate
   BUCKET_KEY: dev.state
 
 jobs:
